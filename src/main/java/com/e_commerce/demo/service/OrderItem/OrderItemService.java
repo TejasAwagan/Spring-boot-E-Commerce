@@ -3,9 +3,11 @@ package com.e_commerce.demo.service.OrderItem;
 import com.e_commerce.demo.models.Order;
 import com.e_commerce.demo.models.OrderItem;
 import com.e_commerce.demo.models.Product;
+import com.e_commerce.demo.models.User;
 import com.e_commerce.demo.repository.IOrderItemRepository;
 import com.e_commerce.demo.repository.IOrderRepository;
 import com.e_commerce.demo.repository.IProductRepository;
+import com.e_commerce.demo.repository.IUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -27,16 +29,38 @@ public class OrderItemService implements IOrderItemService{
     @Autowired
     IOrderItemRepository orderItemRepository;
 
+    @Autowired
+    IUserRepository userRepository;
+
 
     @Override
-    public void addProductToOrder(String orderId, String productId, int quantity) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
+    public void addProductToOrder(String userId, String productId, int quantity) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+
+        List<Order> orders = orderRepository.findByUserId(userId);
+
+        // Step 3: Look for an existing "CREATED" order
+        Order order = orders.stream()
+                .filter(o -> "CREATED".equalsIgnoreCase(o.getStatus()))
+                .findFirst()
+                .orElseGet(() -> {
+                    // If no existing CREATED order, create a new one
+                    Order newOrder = new Order();
+                    newOrder.setOrderId(UUID.randomUUID().toString());
+                    newOrder.setStatus("CREATED");
+                    newOrder.setAmount(BigDecimal.ZERO);
+                    newOrder.setOrderDate(System.currentTimeMillis());
+                    newOrder.setUserId(userId);
+                    return orderRepository.save(newOrder);
+                });
+
 
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new RuntimeException("Product not found with ID: " + productId));
 
-        Optional<OrderItem> optionalItem = orderItemRepository.findByOrderIdAndProductId(order.getOrderId(), product.getProductId());
+        Optional<OrderItem> optionalItem = orderItemRepository.findByOrderIdAndProductId(order.getOrderId(), productId);
 
         if (optionalItem.isPresent()) {
             OrderItem item = optionalItem.get();
@@ -55,9 +79,9 @@ public class OrderItemService implements IOrderItemService{
             orderItemRepository.save(item);
         }
 
+
         updateOrderAmount(order);
     }
-
     @Override
     public void updateProductQuantity(String orderId, String productId, int quantity) {
         Order order = orderRepository.findById(orderId)
@@ -90,18 +114,6 @@ public class OrderItemService implements IOrderItemService{
         orderItemRepository.delete(item);
 
         updateOrderAmount(order);
-    }
-
-    @Override
-    public OrderItem getOrderItem(String orderId, String productId) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
-
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
-
-        return orderItemRepository.findByOrderIdAndProductId(order.getOrderId(), product.getProductId())
-                .orElseThrow(() -> new RuntimeException("Item not found"));
     }
 
     @Override
