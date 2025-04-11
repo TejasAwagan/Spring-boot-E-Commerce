@@ -36,7 +36,7 @@ public class OrderItemService implements IOrderItemService{
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        Optional<OrderItem> optionalItem = orderItemRepository.findByOrderAndProduct(order, product);
+        Optional<OrderItem> optionalItem = orderItemRepository.findByOrderIdAndProductId(order.getOrderId(), product.getProductId());
 
         if (optionalItem.isPresent()) {
             OrderItem item = optionalItem.get();
@@ -46,11 +46,11 @@ public class OrderItemService implements IOrderItemService{
         } else {
             OrderItem item = new OrderItem();
             item.setOrderItemId(UUID.randomUUID().toString());
-            item.setOrder(order);
-            item.setProduct(product);
-            item.setPrice(product.getPrice());
+            item.setOrderId(order.getOrderId());
+            item.setProductId(product.getProductId());
+            item.setPrice(BigDecimal.valueOf(product.getPrice()));
             item.setQuantity(quantity);
-            item.setTotalPrice(product.getPrice().multiply(BigDecimal.valueOf(quantity)));
+            item.setTotalPrice(BigDecimal.valueOf(product.getPrice()).multiply(BigDecimal.valueOf(quantity)));
             item.setStatus("PENDING");
             orderItemRepository.save(item);
         }
@@ -66,7 +66,7 @@ public class OrderItemService implements IOrderItemService{
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        OrderItem item = orderItemRepository.findByOrderAndProduct(order, product)
+        OrderItem item = orderItemRepository.findByOrderIdAndProductId(orderId, productId)
                 .orElseThrow(() -> new RuntimeException("Item not found"));
 
         item.setQuantity(quantity);
@@ -84,7 +84,7 @@ public class OrderItemService implements IOrderItemService{
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        OrderItem item = orderItemRepository.findByOrderAndProduct(order, product)
+        OrderItem item = orderItemRepository.findByOrderIdAndProductId(order.getOrderId(), product.getProductId())
                 .orElseThrow(() -> new RuntimeException("Item not found"));
 
         orderItemRepository.delete(item);
@@ -100,7 +100,7 @@ public class OrderItemService implements IOrderItemService{
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        return orderItemRepository.findByOrderAndProduct(order, product)
+        return orderItemRepository.findByOrderIdAndProductId(order.getOrderId(), product.getProductId())
                 .orElseThrow(() -> new RuntimeException("Item not found"));
     }
 
@@ -109,11 +109,11 @@ public class OrderItemService implements IOrderItemService{
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        return orderItemRepository.findByOrder(order);
+        return orderItemRepository.findByOrderId(orderId);
     }
 
     private void updateOrderAmount(Order order) {
-        List<OrderItem> items = orderItemRepository.findByOrder(order);
+        List<OrderItem> items = orderItemRepository.findByOrderId(order.getOrderId());
         BigDecimal total = items.stream()
                 .map(OrderItem::getTotalPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);

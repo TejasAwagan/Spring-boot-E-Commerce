@@ -1,11 +1,10 @@
 package com.e_commerce.demo.service.order;
 
-import com.e_commerce.demo.dto.OrderDto;
 import com.e_commerce.demo.models.Order;
 import com.e_commerce.demo.models.User;
 import com.e_commerce.demo.repository.IOrderRepository;
 import com.e_commerce.demo.repository.IUserRepository;
-import org.modelmapper.ModelMapper;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -21,9 +20,6 @@ public class OrderService implements IOrderService{
     @Autowired
     private IUserRepository userRepository;
 
-    @Autowired
-    ModelMapper modelMapper;
-
     @Override
     public Order createOrder(String userId) {
         User user = userRepository.findById(userId)
@@ -33,7 +29,7 @@ public class OrderService implements IOrderService{
         order.setOrderId(UUID.randomUUID().toString());
         order.setUserId(userId);
         order.setStatus("CREATED");
-        order.setAmount(BigDecimal.ZERO); // initially zero
+        order.setAmount(BigDecimal.ZERO);
         order.setOrderDate(System.currentTimeMillis());
         Order savedOrder = orderRepository.save(order);
         return savedOrder;
@@ -48,7 +44,7 @@ public class OrderService implements IOrderService{
 
     @Override
     public List<Order> getOrdersByUser(String userId) {
-        return orderRepository.findByUserUserId(userId);
+        return orderRepository.findByUserId(userId);
     }
 
     @Override

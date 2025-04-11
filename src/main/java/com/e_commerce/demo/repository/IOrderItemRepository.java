@@ -8,7 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;
 
-public interface IOrderItemRepository extends JpaRepository<Order,String> {
-    Optional<OrderItem> findByOrderAndProduct(Order order, Product product);
-    List<OrderItem> findByOrder(Order order);
+public interface IOrderItemRepository extends JpaRepository<OrderItem,String> {
+    Optional<OrderItem> findByOrderIdAndProductId(String orderId, String productId);
+
+    List<OrderItem> findByOrderId(String orderId);
 }
